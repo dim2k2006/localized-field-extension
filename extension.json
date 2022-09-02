@@ -1,0 +1,8 @@
+{
+  "id": "localized-field-extension",
+  "name": "localized-field-extension",
+  "srcdoc": "./build/index.html",
+  "fieldTypes": [
+    "Object"
+  ]
+}
