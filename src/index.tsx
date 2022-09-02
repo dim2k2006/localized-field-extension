@@ -1,66 +1,92 @@
-import * as React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { render } from 'react-dom';
-import { TextInput } from '@contentful/f36-components';
+import { TextInput, FormControl, Form, GlobalStyles } from '@contentful/f36-components';
 import { init, FieldExtensionSDK } from 'contentful-ui-extensions-sdk';
-import './index.css';
 
 enum Locale {
   pl_PL = 'pl-PL',
   en_US = 'en-US',
 }
 
+type LocalizedField = {
+  [key in Locale]?: string;
+};
+
 interface AppProps {
   sdk: FieldExtensionSDK;
 }
 
-interface AppState {
-  value?: string;
+interface AppProps {
+  sdk: FieldExtensionSDK;
 }
 
-export class App extends React.Component<AppProps, AppState> {
-  constructor(props: AppProps) {
-    super(props);
-    this.state = {
-      value: props.sdk.field.getValue() || '',
+const App: React.FC<AppProps> = ({ sdk }) => {
+  const sdkValue = sdk.field.getValue();
+  const initialValue = sdkValue ? sdkValue : {};
+
+  const [value, setValue] = useState<LocalizedField>(initialValue);
+
+  const onSave = useCallback(
+    (newValue: LocalizedField) => {
+      sdk.field.setValue(newValue);
+
+      setValue(newValue);
+    },
+    [sdk.field]
+  );
+
+  const onChange = useCallback(
+    (value: LocalizedField) => {
+      onSave(value);
+    },
+    [onSave]
+  );
+
+  useEffect(() => {
+    sdk.window.startAutoResizer();
+
+    return () => {
+      sdk.window.stopAutoResizer();
     };
-  }
+  }, [sdk.window]);
 
-  detachExternalChangeHandler: Function | null = null;
+  useEffect(() => {
+    const detachValueChangeHandler = sdk.field.onValueChanged((newValue: LocalizedField = {}) => {
+      setValue(newValue);
+    });
 
-  componentDidMount() {
-    this.props.sdk.window.startAutoResizer();
+    return () => detachValueChangeHandler();
+  }, [onSave, sdk.field]);
 
-    // Handler for external field value changes (e.g. when multiple authors are working on the same entry).
-    this.detachExternalChangeHandler = this.props.sdk.field.onValueChanged(this.onExternalChange);
-  }
+  return (
+    <Form>
+      {Object.values(Locale).map((localeValue) => {
+        const locale = localeValue as Locale;
 
-  componentWillUnmount() {
-    if (this.detachExternalChangeHandler) {
-      this.detachExternalChangeHandler();
-    }
-  }
+        return (
+          <FormControl key={locale}>
+            <FormControl.Label>{locale}</FormControl.Label>
 
-  onExternalChange = (value: string) => {
-    this.setState({ value });
-  };
-
-  onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.currentTarget.value;
-    this.setState({ value });
-    if (value) {
-      await this.props.sdk.field.setValue(value);
-    } else {
-      await this.props.sdk.field.removeValue();
-    }
-  };
-
-  render() {
-    return <div>Here goes something</div>;
-  }
-}
+            <TextInput
+              value={value[locale]}
+              onChange={(event) => onChange({ ...value, [locale]: event.target.value })}
+            />
+          </FormControl>
+        );
+      })}
+    </Form>
+  );
+};
 
 init((sdk) => {
-  render(<App sdk={sdk as FieldExtensionSDK} />, document.getElementById('root'));
+  render(
+    <>
+      <GlobalStyles />
+
+      <App sdk={sdk as FieldExtensionSDK} />
+    </>,
+    document.getElementById('root')
+  );
 });
 
 /**
