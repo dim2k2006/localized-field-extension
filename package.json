@@ -18,11 +18,12 @@
     "contentful-cli": "1.4.48",
     "cssnano": "4.1.10",
     "eslint": "7.12.1",
+    "gh-pages": "^4.0.0",
     "typescript": "4.0.5"
   },
   "scripts": {
     "start": "contentful-extension-scripts start",
-    "build": "contentful-extension-scripts build",
+    "build": "contentful-extension-scripts build --no-inline",
     "lint": "eslint ./ --ext .js,.jsx,.ts,.tsx && tsc -p ./ --noEmit",
     "test": "contentful-extension-scripts test --env=jsdom --watch",
     "test:coverage": "contentful-extension-scripts test --env=jsdom --coverage",
@@ -30,7 +31,8 @@
     "configure": "contentful space use && contentful space environment use",
     "login": "contentful login",
     "logout": "contentful logout",
-    "help": "contentful-extension-scripts help"
+    "help": "contentful-extension-scripts help",
+    "deploy:gh": "gh-pages -d build"
   },
   "dependencies": {
     "@contentful/browserslist-config": "^2.0.0",
